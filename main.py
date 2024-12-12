@@ -10,7 +10,7 @@ if "isLoggedIn" not in st.session_state:
     st.session_state.isLoggedIn = False
     
 
-if st.session_state.isLoggedIn and st.session_state.username:
+#if st.session_state.isLoggedIn and st.session_state.username:
   #  initialize_user_assignments(st.session_state.username)
 # Start background reminder system
     #run_reminder_in_background()
@@ -19,10 +19,10 @@ if st.session_state.isLoggedIn and st.session_state.username:
 #create_assignments_table()
 
 
-if "assignmentsArray" not in st.session_state:
-    st.session_state.assignmentsArray = []  # Placeholder for assignments array
+#if "assignmentsArray" not in st.session_state:
+   # st.session_state.assignmentsArray = []  # Placeholder for assignments array
 
-if st.session_state.assignmentsArray and st.session_state.username:
+#if st.session_state.assignmentsArray and st.session_state.username:
    # run_background_scheduler(st.session_state.assignmentsArray, st.session_state.username)
 
 
