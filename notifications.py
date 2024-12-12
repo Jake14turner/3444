@@ -149,13 +149,3 @@ def send_daily_reminders():
             print(f"Error parsing due_date for assignment '{assignment_name}': {e}")
         except Exception as e:
             print(f"Failed to send email to {email} for assignment '{assignment_name}': {e}")
-
-
-# Example usage
-if __name__ == "__main__":
-    username = "test_user"  # Replace with a valid username
-    run_background_scheduler(username, interval=3600)
-
-    # Keep the main thread running
-    while True:
-        time.sleep(1)
