@@ -1,10 +1,11 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import time
 import threading
 import sqlite3
+from pytz import timezone as pytz_timezone
 
 # Database connection
 DATABASE = 'streamlitBase'
@@ -12,8 +13,8 @@ DATABASE = 'streamlitBase'
 # Email configuration
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-EMAIL_ADDRESS = "slashershashslinging@gmail.com" 
-EMAIL_PASSWORD = "vhwa rhwt yclz vhui"  
+EMAIL_ADDRESS = "slashershashslinging@gmail.com"  # Replace with your email
+EMAIL_PASSWORD = "vhwa rhwt yclz vhui"  # Replace with your app password
 
 # Function to send an email
 def send_email(subject, body, to_email):
@@ -96,6 +97,59 @@ def run_background_scheduler(username, interval=3600):
         target=start_scheduler, args=(username, interval), daemon=True
     )
     scheduler_thread.start()
+# Send daily reminders for assignments
+def send_daily_reminders():
+    """
+    Fetch assignments due today (adjusted for the local time zone) and send email reminders.
+    """
+    # Set your local time zone (e.g., "US/Central")
+    local_tz = pytz_timezone("US/Central")
+    
+    # Get today's date in the local time zone
+    today_local = datetime.now(local_tz).date()
+
+    connection = sqlite3.connect("streamlitBase")
+    cursor = connection.cursor()
+
+    # Fetch assignments along with user emails and usernames
+    query = '''
+        SELECT users.username, users.email, assignments.assignment_name, assignments.due_date
+        FROM assignments
+        JOIN users ON assignments.user_id = users.id
+    '''
+    cursor.execute(query)
+    results = cursor.fetchall()
+    connection.close()
+
+    # Process each assignment and send an email
+    for username, email, assignment_name, due_date_str in results:
+        try:
+            # Parse the due_date from string to UTC datetime
+            due_date_utc = datetime.fromisoformat(due_date_str.replace("Z", "+00:00"))
+            
+            # Convert the UTC due_date to the local time zone
+            due_date_local = due_date_utc.astimezone(local_tz)
+            due_date_local_adjust = due_date_local - timedelta(days=1)
+                    
+
+            # Check if the assignment is due today in the local time zone
+            if due_date_local_adjust.date() == today_local:
+                subject = "Assignment Due Reminder"
+                body = (
+                    f"Hi {username},\n\n"
+                    f"This is a reminder that your assignment '{assignment_name}' "
+                    f"is due today ({due_date_local.strftime('%Y-%m-%d %I:%M %p %Z')}).\n\n"
+                    "Best regards,\nAssignment Tracker Team"
+                )
+                send_email(subject, body, email)
+                print(f"Email sent to {email} for assignment: {assignment_name}")
+            else:
+                print(f"Assignment '{assignment_name}' is not due today.")
+        except ValueError as e:
+            print(f"Error parsing due_date for assignment '{assignment_name}': {e}")
+        except Exception as e:
+            print(f"Failed to send email to {email} for assignment '{assignment_name}': {e}")
+
 
 # Example usage
 if __name__ == "__main__":
