@@ -32,7 +32,7 @@ def showNavigationBar():
     with col2:
         st.page_link("tasksPage.py", label=":orange[$\\large \\sf{Assignment}$ $\\large \\sf{}$ $\\large \\sf{Manager}$]")
     with col3:
-        st.page_link("toDoPage.py", label=":orange[$\\large \\sf{View}$ $\\large \\sf{}$ $\\large \\sf{All}$ $\\large \\sf{}$ $\\large \\sf{Assignments}$]")
+        st.page_link("todoPage.py", label=":orange[$\\large \\sf{View}$ $\\large \\sf{}$ $\\large \\sf{All}$ $\\large \\sf{}$ $\\large \\sf{Assignments}$]")
     with col4:
         st.page_link("customSchedulePage.py", label=":orange[$\\large \\sf{View}$ $\\large \\sf{}$ $\\large \\sf{Custom}$ $\\large \\sf{}$ $\\large \\sf{Schedule}$]")
     with col5:
