@@ -402,9 +402,7 @@ def register():
                     st.session_state.can_show_homepage = True
                     can = True
                     st.session_state.registered = True
-                    login = st.button("Log in")
-                    if login:
-                        st.switch_page("loginPage.py")
+                    
 
 
 
