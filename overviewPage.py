@@ -11,7 +11,7 @@ from navigationUI import showNavigationBar
 
 
 def overviewPage(information):
-    st.title("Class Progress Visualization Page :pie_chart:")
+    st.title("Class Progress Visualization Page")
 
     if information:
         grade_dicts = convertToDictionary(information)
