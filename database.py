@@ -44,8 +44,14 @@ def create_assignments_table():
             UNIQUE(user_id, assignment_name, course_id)
         );
     ''')
+
+    cursor.execute("SELECT assignment_name, due_date, course_id FROM assignments")
+    results = cursor.fetchall()  # Fetch all rows from the query
+
+    
     connection.commit()
     connection.close()
+    
 # Convert results to a list of dictionaries
     return [{"name": row[0], "due_date": row[1], "course_id": row[2]} for row in results]
 
