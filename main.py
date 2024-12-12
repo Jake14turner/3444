@@ -16,7 +16,7 @@ if st.session_state.isLoggedIn and st.session_state.username:
     run_reminder_in_background()
 
 # Ensure the assignments table exists
-create_assignments_table()
+#create_assignments_table()
 
 
 if "assignmentsArray" not in st.session_state:
