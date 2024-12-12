@@ -402,8 +402,6 @@ def register():
                     st.session_state.can_show_homepage = True
                     can = True
                     st.session_state.registered = True
-                    
-
 
 
                      # Send a welcome email
@@ -484,9 +482,10 @@ def send_daily_reminders():
             
             # Convert the UTC due_date to the local time zone
             due_date_local = due_date_utc.astimezone(local_tz)
+            ue_date_local_adjust = due_date_local - timedelta(days=1)
 
             # Check if the assignment is due today in the local time zone
-            if due_date_local.date() == today_local:
+            if due_date_local_adjust.date() == today_local:
                 subject = "Assignment Due Reminder"
                 body = (
                     f"Hi {username},\n\n"
@@ -540,7 +539,7 @@ def initialize_user_assignments(username):
 
     # Fetch assignments using the `initializeUserInfoJSON` function
     st.info("Fetching assignments from Canvas...")
-    user_data = st.session_state.data
+    user_data = initializeUserInfoJSON(username) # Fetch courses and assignments
 
     if not user_data or "courses" not in user_data:
         st.error("Failed to fetch assignments. Please check your API key.")
