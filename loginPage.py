@@ -20,5 +20,9 @@ def loginPageView():
     else:
         st.session_state.isLoggedIn = False
 
+    register = st.button("click here to register")
+    if register:
+        st.switch_page("registerPage.py")
+
 loginPageView()
 
