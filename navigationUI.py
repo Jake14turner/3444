@@ -26,13 +26,13 @@ def showNavigationBar():
         """, unsafe_allow_html=True
         )
 
-    col1, col2, col3, col4, col5, col6, col7 = st.columns((0.5, 3, 5, 3, 2, 3, 2))
+    col1, col2, col3, col4, col5, col6, col7 = st.columns((1, 2.4, 2.4, 2.5, 1.3, 2.6, 1.5))
     with col1:
         st.page_link("homePage.py", label=":orange[$\\large \\sf{Home}$]")
     with col2:
         st.page_link("tasksPage.py", label=":orange[$\\large \\sf{Assignment}$ $\\large \\sf{}$ $\\large \\sf{Manager}$]")
     with col3:
-        st.page_link("todoPage.py", label=":orange[$\\large \\sf{View}$ $\\large \\sf{}$ $\\large \\sf{All}$ $\\large \\sf{}$ $\\large \\sf{Assignments}$]")
+        st.page_link("toDoPage.py", label=":orange[$\\large \\sf{View}$ $\\large \\sf{}$ $\\large \\sf{All}$ $\\large \\sf{}$ $\\large \\sf{Assignments}$]")
     with col4:
         st.page_link("customSchedulePage.py", label=":orange[$\\large \\sf{View}$ $\\large \\sf{}$ $\\large \\sf{Custom}$ $\\large \\sf{}$ $\\large \\sf{Schedule}$]")
     with col5:
@@ -42,5 +42,4 @@ def showNavigationBar():
     with col7:
         if st.button("Logout"):
             logout()
-
 
