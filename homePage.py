@@ -39,3 +39,4 @@ if st.session_state.isLoggedIn:
     homePageView()
 else:
     st.text("Please log in to view home page.")
+    st.switch_page("registerPage.py")
