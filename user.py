@@ -634,7 +634,7 @@ def displayProgressBar(total_score, total_possible):
             "red"
         )
         st.progress(progress, text=f"{progress * 100:.2f}% Completed")
-        st.markdown(f"<div style='color: {color}; font-size: 1.2em; font-weight: bold;'>Class Progress: {progress * 100:.2f}%</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='color: {color}; font-size: 1.2em; font-weight: bold;'>Classs Grade out of 100: {progress * 100:.2f}%</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div style='color: gray; font-size: 1.2em; font-weight: bold;'>No graded assignments to calculate progress</div>", unsafe_allow_html=True)
 
