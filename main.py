@@ -13,7 +13,7 @@ if "isLoggedIn" not in st.session_state:
 if st.session_state.isLoggedIn and st.session_state.username:
     initialize_user_assignments(st.session_state.username)
 # Start background reminder system
-    run_reminder_in_background()
+    #run_reminder_in_background()
 
 # Ensure the assignments table exists
 #create_assignments_table()
