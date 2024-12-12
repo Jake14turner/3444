@@ -17,12 +17,12 @@ from database import (
     save_assignment,
     create_assignments_table,
 )
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from notifications import send_email
 import time
 import threading
 import sqlite3
-
+from pytz import timezone as pytz_timezone 
 
 
 class Assignment:
@@ -58,13 +58,39 @@ def getUserEmail(username):
 
 
 
+
 # Store assignments in the database
 def store_assignments(data, user_id):
+    """
+    Stores assignments from the Canvas API in the database.
+    
+    Args:
+        data (dict): The JSON data containing courses and assignments.
+        user_id (int): The ID of the user associated with the assignments.
+    """
     for course in data["courses"]:
         for assignment in course["assignments"]:
             assignment_name = assignment["name"]
             due_date = assignment.get("due_date", None)
-            save_assignment(user_id, assignment_name, due_date)
+            
+            if due_date:
+                try:
+                    # Normalize the due_date to ISO 8601 UTC format
+                    if due_date.endswith("Z"):
+                        due_date = due_date.replace("Z", "+00:00")
+                    parsed_date = datetime.fromisoformat(due_date)
+
+                    # Optionally adjust due_date (if needed)
+                    adjusted_date = parsed_date - timedelta(days=1)  # Adjust by -1 day if needed
+                    adjusted_due_date_str = adjusted_date.isoformat().replace("+00:00", "Z")
+                    
+                    # Save the assignment to the database
+                    save_assignment(user_id, assignment_name, adjusted_due_date_str)
+                except ValueError as e:
+                    print(f"Error parsing date for assignment '{assignment_name}': {e}")
+                except Exception as e:
+                    print(f"Error saving assignment '{assignment_name}': {e}")
+
 
 
 
@@ -346,6 +372,7 @@ def checkForUserKey(username):
 def register():
    
     words = "Submit"
+    text = "Already have an account? Press here to log in."
     can = False
 
     if 'show_text' not in st.session_state:
@@ -363,7 +390,9 @@ def register():
 
         if st.button(words):
             if username and password and email and key:
-                
+                if "@" not in email or "." not in email:
+                    st.error("Invalid email address.")
+                    return                
 
                 #This is the responsibiliyt of the database component: We need to take the entered username and password, check if they are already taken, and if not they can create an account
                 success = registerUser(username, password, key, email)
@@ -384,36 +413,22 @@ def register():
                     except Exception as e:
                         st.warning(f"Registration successful, but failed to send the email: {e}")
 
-
-
-
                 else:
-                    return
-
-                    
-                    
-                    
-
-                
-            
-                        
+                    st.error("Registration failed. The username or email might already exist.")                                          
             else:
-                st.error("Please fill in both fields before submitting.")
-
+                    st.error("Please fill in both fields before submitting.")
+        if st.button(text):
+            st.switch_page("loginPage.py")
     if st.session_state.can_show_homepage:
         st.text("Thanks for registering, You can now login to your account")
+        time.sleep(1)
+        st.switch_page("loginPage.py")
 
 
 #####   this functinon is for a user to log into their account   #####
 def login():
-   
-
-
-    username = st.text_input("Please enter a username")
-    password = st.text_input("Please choose a password")
-
-    text = ""
-
+    username = st.text_input("Please enter your username")
+    password = st.text_input("Please enter your password", type="password")
 
     if st.button("Log in"):
 
@@ -424,7 +439,7 @@ def login():
             user = loginUser(username, password)
             
             if user:
-                st.success(f"Welcome back, {username}! Your user ID is {user[0]}.")
+                st.success(f"Welcome {username}!")
               # st.session_state.isLoggedIn = True
                 st.session_state.username = username
                 return True
@@ -438,32 +453,53 @@ def login():
 # Send daily reminders for assignments
 def send_daily_reminders():
     """
-    Fetch assignments due today and send email reminders to the corresponding users.
+    Fetch assignments due today (adjusted for the local time zone) and send email reminders.
     """
-    today = datetime.now().strftime("%Y-%m-%d")
+    # Set your local time zone (e.g., "US/Central")
+    local_tz = pytz_timezone("US/Central")
+    
+    # Get today's date in the local time zone
+    today_local = datetime.now(local_tz).date()
+
     connection = sqlite3.connect("streamlitBase")
     cursor = connection.cursor()
 
-    # Fetch assignments due today
+    # Fetch assignments along with user emails and usernames
     query = '''
-        SELECT users.email, assignments.assignment_name, assignments.due_date
+        SELECT users.username, users.email, assignments.assignment_name, assignments.due_date
         FROM assignments
         JOIN users ON assignments.user_id = users.id
-        WHERE DATE(assignments.due_date) = ?
     '''
-    cursor.execute(query, (today,))
+    cursor.execute(query)
     results = cursor.fetchall()
     connection.close()
 
-    # Send reminders for each assignment
-    for email, assignment_name, due_date in results:
-        subject = "Assignment Due Reminder"
-        body = f"Hi,\n\nThis is a reminder that your assignment '{assignment_name}' is due today ({due_date}).\n\nBest regards,\nAssignment Tracker Team"
+    # Process each assignment and send an email
+    for username, email, assignment_name, due_date_str in results:
         try:
-            send_email(subject, body, email)
-            print(f"Reminder sent to {email} for assignment: {assignment_name}")
+            # Parse the due_date from string to UTC datetime
+            due_date_utc = datetime.fromisoformat(due_date_str.replace("Z", "+00:00"))
+            
+            # Convert the UTC due_date to the local time zone
+            due_date_local = due_date_utc.astimezone(local_tz)
+
+            # Check if the assignment is due today in the local time zone
+            if due_date_local.date() == today_local:
+                subject = "Assignment Due Reminder"
+                body = (
+                    f"Hi {username},\n\n"
+                    f"This is a reminder that your assignment '{assignment_name}' "
+                    f"is due today ({due_date_local.strftime('%Y-%m-%d %I:%M %p %Z')}).\n\n"
+                    "Best regards,\nAssignment Tracker Team"
+                )
+                send_email(subject, body, email)
+                print(f"Email sent to {email} for assignment: {assignment_name}")
+            else:
+                print(f"Assignment '{assignment_name}' is not due today.")
+        except ValueError as e:
+            print(f"Error parsing due_date for assignment '{assignment_name}': {e}")
         except Exception as e:
-            print(f"Failed to send reminder to {email}: {e}")
+            print(f"Failed to send email to {email} for assignment '{assignment_name}': {e}")
 
 
 # Start the reminder system
@@ -500,13 +536,16 @@ def initialize_user_assignments(username):
         st.error("No API key found for this user. Please register or update your key.")
         return
 
-    user_data = st.session_state.data # Fetch courses and assignments
+    # Fetch assignments using the `initializeUserInfoJSON` function
+    st.info("Fetching assignments from Canvas...")
+    user_data = initializeUserInfoJSON(username) # Fetch courses and assignments
 
     if not user_data or "courses" not in user_data:
         st.error("Failed to fetch assignments. Please check your API key.")
         return
 
     # Save assignments to the database
+    st.info("Saving assignments to the database...")
     for course in user_data["courses"]:
         for assignment in course["assignments"]:
             assignment_name = assignment["name"]
@@ -521,6 +560,8 @@ def initialize_user_assignments(username):
                 except Exception as e:
                     st.error(f"Error saving assignment '{assignment_name}': {e}")
                     continue
+
+    st.success("Assignments have been initialized and stored in the database.")
 
 
 # Display user dashboard
@@ -751,5 +792,7 @@ def getNextThreeAssignments(course):
 
 
     return [assignment for assignment in sorted_assignments if parseDueDate(assignment.dueDate) > datetime.now()][:3]
+
+
 
 
