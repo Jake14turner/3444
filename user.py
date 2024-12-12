@@ -540,7 +540,7 @@ def initialize_user_assignments(username):
 
     # Fetch assignments using the `initializeUserInfoJSON` function
     st.info("Fetching assignments from Canvas...")
-    user_data = initializeUserInfoJSON(username) # Fetch courses and assignments
+    user_data = st.session_state.data
 
     if not user_data or "courses" not in user_data:
         st.error("Failed to fetch assignments. Please check your API key.")
