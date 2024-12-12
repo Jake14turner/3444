@@ -147,4 +147,5 @@ if st.session_state.isLoggedIn:
     customSchedulePage()
 else:
     st.text("Please log in to view the scheduler page.")
+    st.switch_page("registerPage.py")
 
