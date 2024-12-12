@@ -72,4 +72,5 @@ if st.session_state.get('isLoggedIn', False):
     assignmentWorkflowPage()
 else:
     st.text("Please log in to view the Assignment Workflow page.")
+    st.switch_page("registerPage.py")
 
