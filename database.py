@@ -41,22 +41,76 @@ def create_assignments_table():
             due_date TEXT,
             course_id INTEGER,
             FOREIGN KEY(user_id) REFERENCES users(id)
-        )
+            UNIQUE(user_id, assignment_name, course_id)
+        );
     ''')
     connection.commit()
     connection.close()
+# Convert results to a list of dictionaries
+    return [{"name": row[0], "due_date": row[1], "course_id": row[2]} for row in results]
+
 def save_assignment(user_id, assignment_name, due_date, course_id=None):
-    connection = sqlite3.connect('streamlitBase')
-    cursor = connection.cursor()
+    """
+    Saves an assignment to the database with a 1-day adjustment for the due date.
 
-    # Insert assignment into the table
-    cursor.execute('''
-        INSERT INTO assignments (user_id, assignment_name, due_date, course_id)
-        VALUES (?, ?, ?, ?)
-    ''', (user_id, assignment_name, due_date, course_id))
+    Args:
+        user_id (int): The ID of the user to associate the assignment with.
+        assignment_name (str): The name of the assignment.
+        due_date (str): The due date of the assignment in ISO 8601 format.
+        course_id (int, optional): The ID of the course associated with the assignment. Defaults to None.
 
-    connection.commit()
-    connection.close()
+    Returns:
+        bool: True if the assignment is saved successfully, False otherwise.
+    """
+    try:
+        # Normalize the due_date to remove 'Z' and ensure it is ISO-compliant
+        if due_date.endswith("Z"):
+            due_date = due_date.replace("Z", "+00:00")
+
+        # Parse the ISO 8601 date to ensure it's valid
+        parsed_date = datetime.fromisoformat(due_date)
+
+        # Subtract one day from the parsed date
+        adjusted_date = parsed_date - timedelta(days=1)
+
+        # Convert adjusted_date back to 'Z' format for UTC
+        adjusted_date_str = adjusted_date.isoformat().replace("+00:00", "Z")
+
+        # Connect to SQLite database
+        connection = sqlite3.connect('streamlitBase')
+        cursor = connection.cursor()
+        
+        # Check for existing assignment
+        cursor.execute('''
+            SELECT 1 FROM assignments
+            WHERE user_id = ? AND assignment_name = ? AND due_date = ? AND course_id = ?
+        ''', (user_id, assignment_name, adjusted_date_str, course_id))
+        result = cursor.fetchone()
+        if result:
+            print("Duplicate assignment detected.")
+            return False
+
+        # Insert the adjusted assignment into the database
+        cursor.execute('''
+            INSERT INTO assignments (user_id, assignment_name, due_date, course_id)
+            VALUES (?, ?, ?, ?)
+        ''', (user_id, assignment_name, adjusted_date_str, course_id))
+
+        connection.commit()
+        print(f"Saved assignment: {assignment_name}, Adjusted Due: {adjusted_date_str}")
+        return True
+
+    except ValueError as e:
+        print(f"Invalid date format: {e}")
+        return False
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        return False
+
+    finally:
+        connection.close()
+
 
 
 def get_user_assignments(user_id):
@@ -92,11 +146,11 @@ def registerUser(username, password, key, email):
     #create the database if there are no users yet
     connect.execute('''                   
                     CREATE TABLE IF NOT EXISTS users
-                    (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, key TEXT, email TEXT UNIQUE, assignment_estimates TEXT, DaysAvailableToWork TEXT)''')
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, key TEXT, email TEXT UNIQUE,assignment_estimates TEXT, DaysAvailableToWork TEXT)''')
     connection.commit()
 
     try:
-        connect.execute("INSERT INTO users (username, password, key, email) VALUES (?, ?, ?, ?)", (username, password, key, email))
+        connect.execute("INSERT INTO users (username, password, key, email) VALUES (?, ?, ?, ?)", (username, password, key,email))
         connection.commit()
         return True
     except sqlite3.IntegrityError:
